@@ -14,6 +14,12 @@ Automatic timer · Current sensing · Local web app · 3D-printed enclosure
 
 </div>
 
+## Why this exists
+
+My wife never turns off her makeup mirror when she's finished. So I did what any reasonable person would do: built a Wi-Fi-enabled controller with current sensing, a web app and a custom 3D-printed enclosure to turn it off for her.
+
+One forgotten light. One perfectly reasonable engineering project. ❤️
+
 ## The project
 
 MrMatzo Mirror Controller is an ESP8266 timer app that switches a mirror's 12 V supply through a MOSFET. An INA219 measures current to detect when the mirror light is on and start an automatic timer. When the timer expires, the controller cuts power for three seconds to reset the mirror, then restores the 12 V supply.
