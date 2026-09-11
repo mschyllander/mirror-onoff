@@ -1,9 +1,9 @@
 <div align="center">
 
-# MIRROR / ON·OFF
+# MR MATZO / MIRROR CONTROLLER
 
-### Ett elektronikprojekt för spegeln.
-Strömmätning · ESP8266 · Egen 3D-printad kapsling
+### Spegeln tänds. Timern tar hand om resten.
+Automatisk timer · Strömavkänning · Lokal webbapp · 3D-printad kapsling
 
 [Hårdvara](docs/hardware.md) · [Mätning](docs/measurements.md) · [Kapsling](hardware/enclosure/) · [Galleri](docs/gallery.md)
 
@@ -15,11 +15,33 @@ Strömmätning · ESP8266 · Egen 3D-printad kapsling
 
 ## Projektet
 
-Mirror On/Off samlar arbetet med elektronik till en spegel: prototypen, komponenterna, en strömmätning under test och modellen till en egen kapsling. Här finns underlaget från arbetsbänken samlat för fortsatt utveckling och dokumentation.
+MrMatzo Mirror Controller är en timer-app på ESP8266 som styr spegelns 12 V-matning via MOSFET. En INA219 mäter strömmen och känner av när spegelbelysningen är tänd. Då startar en automatisk timer. När tiden går ut bryts matningen i tre sekunder för att återställa spegeln, varefter 12 V kopplas tillbaka.
 
-Bilderna visar ett ESP8266-kort, en INA219-strömsensor, en justerbar DC/DC-modul och en separat IRLB8721-komponent. Testgrafen visar spegelns ström över ungefär fem minuter, med markerade trösklar för ON och OFF.
+Via den lokala webbappen på [mirror.local](http://mirror.local) kan du följa ström, spänning, effekt och återstående tid, välja timerlängd och styra matningen manuellt.
 
-> **Projektstatus:** Hårdvara, bilder och 3D-modell finns här. Firmware och verifierat kopplingsschema återstår att lägga till. Den exakta styrfunktionen behöver beskrivas av projektägaren.
+**Firmware 1.3 finns i repot**, oförändrad från originalet. Funktionsbeskrivningen är kontrollerad mot koden; kompilering och körning på hårdvaran har inte utförts här.
+
+## Så fungerar timern
+
+1. INA219 läses ungefär var 100 ms. Ett glidande medelvärde över tio mätningar jämnar ut strömmen.
+2. Minst 31 mA under 700 ms bekräftar att belysningen är tänd och startar timern när automatik är aktiv.
+3. Timern är förvald till **10 minuter** och kan ställas på **1–1440 minuter**. Inställningen sparas i LittleFS.
+4. När tiden går ut bryts 12 V i **3 sekunder**. Matningen återställs och tillståndsdetekteringen väntar **5 sekunder**.
+5. Efter ett automatiskt strömavbrott måste högst 26 mA under 1000 ms bekräfta släckt läge innan en ny timer tillåts.
+
+Om spegeln släcks innan tiden gått ut stoppas timern. Mellan 26 och 31 mA behålls ett redan känt tillstånd.
+
+```mermaid
+flowchart LR
+    A[Ström bekräftar tänt] --> B[Timer räknar ned]
+    B --> C[12 V bryts i 3 s]
+    C --> D[12 V återställs]
+    D --> E[Vänta 5 s]
+    E --> F[Invänta bekräftat släckt]
+    F --> A
+```
+
+[Firmware och användning →](firmware/README.md)
 
 ## Från prototyp till kapsling
 
@@ -42,7 +64,7 @@ Bilderna visar ett ESP8266-kort, en INA219-strömsensor, en justerbar DC/DC-modu
 | Skillnad mellan trösklar | 5 mA |
 | Testlängd | Cirka 295 sekunder |
 
-Grafen visar både stabila strömnivåer och korta toppar. Två olika trösklar kan användas för hysteres, men firmware behövs för att fastställa den faktiska logiken. [Läs mätanteckningarna →](docs/measurements.md)
+Grafen visar både stabila strömnivåer och korta toppar. Firmware använder hysteres och tidsbekräftelse för att skilja tänt från släckt läge. [Läs mätanteckningarna →](docs/measurements.md)
 
 ## Utforska projektet
 
@@ -52,14 +74,14 @@ Grafen visar både stabila strömnivåer och korta toppar. Två olika trösklar 
 | Testgraf och tolkning | [Mätningar](docs/measurements.md) |
 | Alla projektbilder | [Bildgalleri](docs/gallery.md) |
 | Modell för kapslingen | [Box_mirror_onoff.3mf](hardware/enclosure/Box_mirror_onoff.3mf) |
-| Plats för befintlig programvara | [Firmware](firmware/README.md) |
+| Firmware 1.3 och användning | [Firmware](firmware/README.md) |
 | Återstående dokumentation | [Nästa steg](docs/next-steps.md) |
 
 ## Använd underlaget
 
 Öppna 3MF-filen i ett kompatibelt CAD- eller slicerprogram för att granska kapslingen. Modellen anger millimeter som enhet och innehåller två modellobjekt. Utskriftsinställningar och passform behöver kontrolleras före utskrift; se [kapslingens dokumentation](hardware/enclosure/README.md).
 
-Det finns ännu ingen byggbar firmware eller komplett monteringsanvisning i repot.
+Arduino-sketch och beroendeöversikt finns under [firmware](firmware/README.md). Exakt kortprofil, biblioteksversioner och ett fullständigt verifierat kopplingsschema återstår att dokumentera.
 
 ## Licens
 

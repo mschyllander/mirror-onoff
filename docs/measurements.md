@@ -4,7 +4,7 @@
 
 ## Underlag
 
-Den bifogade grafen heter **Uppmätt spegelström under testkörning**. X-axeln visar sekunder från start och Y-axeln ström i mA. Kurvan är märkt *Filtrerad ström*. Någon rådatafil eller kod för filtreringen har inte bifogats.
+Den bifogade grafen heter **Uppmätt spegelström under testkörning**. X-axeln visar sekunder från start och Y-axeln ström i mA. Kurvan är märkt *Filtrerad ström*. Någon rådatafil har inte bifogats. Firmware 1.3 finns nu i repot och använder ett glidande medelvärde över tio strömmätningar med 100 ms avläsningsintervall. Det är inte fastställt att just denna version skapade grafen.
 
 ## Avläsning
 
@@ -18,10 +18,12 @@ Den bifogade grafen heter **Uppmätt spegelström under testkörning**. X-axeln 
 
 Platåer, tider och toppvärde är visuella uppskattningar från bilden. Tröskelvärdena är uttryckligen angivna i grafens teckenförklaring.
 
-## Tolkning som behöver bekräftas
+## Logik i firmware 1.3
 
-Skillnaden mellan ON- och OFF-tröskeln är 5 mA. En möjlig användning är att växla till ON över den övre tröskeln, till OFF under den undre och behålla tillståndet däremellan. Detta är en möjlig tolkning av grafen, inte en beskrivning av verifierad firmware.
+Skillnaden mellan trösklarna är 5 mA. Koden bekräftar ON när filtrerad ström ligger på minst 31 mA i 700 ms, och OFF vid högst 26 mA i 1000 ms. Mellan trösklarna behålls ett känt tillstånd. Timern startar vid bekräftat ON när automatiken är aktiv och återstartsspärren tillåter det.
 
-För att återskapa testet behövs rådata, samplingsintervall, filterdefinition, sensorkalibrering och anteckningar om vad som hände under körningen.
+Kodens inledande kommentar anger cirka 20–21,5 mA för släckt spegel och 36–40 mA för lägsta tända nivå. Detta är projektets antecknade mätvärden, inte nya mätningar i detta repo.
 
-[Tillbaka till projektet](../README.md)
+För att återskapa testgrafen behövs rådata och anteckningar om händelserna under körningen samt bekräftelse på vilken firmwareversion som användes.
+
+[Firmware och fullständiga timerregler](../firmware/README.md) · [Tillbaka till projektet](../README.md)
