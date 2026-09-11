@@ -92,4 +92,7 @@ The Arduino sketch and dependency overview are in [firmware](firmware/README.md)
 
 ## License
 
-A license has not yet been selected. This repository does not currently include an open-source license.
+Released under the [MIT License](LICENSE). Copyright © 2026 Mats Schyllander.
+
+You are welcome to use and modify your own copy. Changes to this repository are
+managed by the maintainer; see [Contributing](CONTRIBUTING.md).

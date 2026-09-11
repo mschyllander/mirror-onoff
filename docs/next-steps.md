@@ -11,5 +11,5 @@
 - [ ] Confirm which power adapter is used.
 - [ ] Document print settings and mounting hardware.
 - [ ] Add raw data and instructions for repeating the measurement.
-- [ ] Select a license.
-- [ ] Choose the Git hosting account and repository visibility before publishing.
+- [x] Select the MIT license.
+- [x] Publish on GitHub as `mschyllander/mirror-onoff` with public visibility.
