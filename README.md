@@ -2,87 +2,88 @@
 
 # MR MATZO / MIRROR CONTROLLER
 
-### Spegeln tänds. Timern tar hand om resten.
-Automatisk timer · Strömavkänning · Lokal webbapp · 3D-printad kapsling
+### Turn on the mirror. Let the timer take care of the rest.
 
-[Hårdvara](docs/hardware.md) · [Mätning](docs/measurements.md) · [Kapsling](hardware/enclosure/) · [Galleri](docs/gallery.md)
+Automatic timer · Current sensing · Local web app · 3D-printed enclosure
 
-![Monterad kapsling för spegelprojektet](docs/images/enclosure-assembled.jpg)
+[Hardware](docs/hardware.md) · [Measurements](docs/measurements.md) · [Enclosure](hardware/enclosure/) · [Gallery](docs/gallery.md)
 
-**12 V matning på fotograferad adapter** &nbsp; / &nbsp; **INA219** &nbsp; / &nbsp; **ESP-12E**
+![Assembled mirror controller enclosure](docs/images/enclosure-assembled.jpg)
+
+**12 V mirror supply** &nbsp; / &nbsp; **INA219** &nbsp; / &nbsp; **ESP-12E**
 
 </div>
 
-## Projektet
+## The project
 
-MrMatzo Mirror Controller är en timer-app på ESP8266 som styr spegelns 12 V-matning via MOSFET. En INA219 mäter strömmen och känner av när spegelbelysningen är tänd. Då startar en automatisk timer. När tiden går ut bryts matningen i tre sekunder för att återställa spegeln, varefter 12 V kopplas tillbaka.
+MrMatzo Mirror Controller is an ESP8266 timer app that switches a mirror's 12 V supply through a MOSFET. An INA219 measures current to detect when the mirror light is on and start an automatic timer. When the timer expires, the controller cuts power for three seconds to reset the mirror, then restores the 12 V supply.
 
-Via den lokala webbappen på [mirror.local](http://mirror.local) kan du följa ström, spänning, effekt och återstående tid, välja timerlängd och styra matningen manuellt.
+The local web app at [mirror.local](http://mirror.local) displays current, voltage, power and remaining time. It also lets you set the timer duration and control the supply manually.
 
-**Firmware 1.3 finns i repot**, oförändrad från originalet. Funktionsbeskrivningen är kontrollerad mot koden; kompilering och körning på hårdvaran har inte utförts här.
+**Firmware 1.3 is included**, unchanged from the original. The behavior described here has been checked against the source; compilation and hardware testing have not been performed as part of this documentation work. The original firmware's web interface and status messages are in Swedish.
 
-## Så fungerar timern
+## How the timer works
 
-1. INA219 läses ungefär var 100 ms. Ett glidande medelvärde över tio mätningar jämnar ut strömmen.
-2. Minst 31 mA under 700 ms bekräftar att belysningen är tänd och startar timern när automatik är aktiv.
-3. Timern är förvald till **10 minuter** och kan ställas på **1–1440 minuter**. Inställningen sparas i LittleFS.
-4. När tiden går ut bryts 12 V i **3 sekunder**. Matningen återställs och tillståndsdetekteringen väntar **5 sekunder**.
-5. Efter ett automatiskt strömavbrott måste högst 26 mA under 1000 ms bekräfta släckt läge innan en ny timer tillåts.
+1. The INA219 is read approximately every 100 ms. A moving average of ten samples smooths the current reading.
+2. At least 31 mA for 700 ms confirms that the light is on and starts the timer when automatic mode is enabled and rearming is allowed.
+3. The timer defaults to **10 minutes** and can be set to **1–1440 minutes**. The duration is saved in LittleFS.
+4. When time runs out, 12 V is disconnected for **3 seconds**. Power is restored, followed by a **5-second** detection lockout.
+5. After an automatic power cycle, a reading of at most 26 mA for 1000 ms must confirm that the light is off before another timer is allowed.
 
-Om spegeln släcks innan tiden gått ut stoppas timern. Mellan 26 och 31 mA behålls ett redan känt tillstånd.
+Turning off the light before the timer expires stops the countdown. Between 26 and 31 mA, an already known light state is retained.
 
 ```mermaid
 flowchart LR
-    A[Ström bekräftar tänt] --> B[Timer räknar ned]
-    B --> C[12 V bryts i 3 s]
-    C --> D[12 V återställs]
-    D --> E[Vänta 5 s]
-    E --> F[Invänta bekräftat släckt]
+    A[Light confirmed on] --> B[Timer counts down]
+    B --> C[Cut 12 V for 3 s]
+    C --> D[Restore 12 V]
+    D --> E[Wait 5 s]
+    E --> F[Wait for confirmed off]
     F --> A
 ```
 
-[Firmware och användning →](firmware/README.md)
+[Firmware and operation →](firmware/README.md)
 
-## Från prototyp till kapsling
+## From prototype to enclosure
 
 <table>
 <tr>
-<td width="50%"><img src="docs/images/prototype.jpg" alt="Elektronikprototyp på arbetsbänken"></td>
-<td width="50%"><img src="docs/images/enclosure-open.jpg" alt="3D-printad kapsling med separat lock"></td>
+<td width="50%"><img src="docs/images/prototype.jpg" alt="Electronics prototype on the workbench"></td>
+<td width="50%"><img src="docs/images/enclosure-open.jpg" alt="3D-printed enclosure with separate lid"></td>
 </tr>
-<tr><td><b>Elektroniken</b><br>Styrkort, mätmodul och spänningsomvandlare.</td><td><b>Kapslingen</b><br>Printad låda med lock, skruvfästen och kabelurtag.</td></tr>
+<tr><td><b>The electronics</b><br>Controller, current sensor and voltage converter.</td><td><b>The enclosure</b><br>Printed case with lid, screw mounts and cable openings.</td></tr>
 </table>
 
-## Mätningen
+## Current measurements
 
-![Uppmätt spegelström under testkörning](docs/images/current-test.png)
+![Measured mirror current during a test run](docs/images/current-test.png)
 
-| Parameter | Visat i underlaget |
+| Parameter | Value shown in the source material |
 | :--- | :--- |
-| ON-tröskel | 31 mA |
-| OFF-tröskel | 26 mA |
-| Skillnad mellan trösklar | 5 mA |
-| Testlängd | Cirka 295 sekunder |
+| ON threshold | 31 mA |
+| OFF threshold | 26 mA |
+| Threshold gap | 5 mA |
+| Test duration | Approximately 295 seconds |
 
-Grafen visar både stabila strömnivåer och korta toppar. Firmware använder hysteres och tidsbekräftelse för att skilja tänt från släckt läge. [Läs mätanteckningarna →](docs/measurements.md)
+The plot shows steady current levels and brief peaks. The firmware uses hysteresis and confirmation periods to distinguish between on and off. The original plot has Swedish labels; an English label guide is included in the [measurement notes →](docs/measurements.md)
 
-## Utforska projektet
+## Explore the repository
 
-| Innehåll | Här finns det |
+| Content | Location |
 | :--- | :--- |
-| Komponenter och kvarvarande kopplingsuppgifter | [Hårdvara](docs/hardware.md) |
-| Testgraf och tolkning | [Mätningar](docs/measurements.md) |
-| Alla projektbilder | [Bildgalleri](docs/gallery.md) |
-| Modell för kapslingen | [Box_mirror_onoff.3mf](hardware/enclosure/Box_mirror_onoff.3mf) |
-| Firmware 1.3 och användning | [Firmware](firmware/README.md) |
-| Återstående dokumentation | [Nästa steg](docs/next-steps.md) |
+| Components and outstanding wiring details | [Hardware](docs/hardware.md) |
+| Test plot and interpretation | [Measurements](docs/measurements.md) |
+| All project photos | [Gallery](docs/gallery.md) |
+| Enclosure model | [Box_mirror_onoff.3mf](hardware/enclosure/Box_mirror_onoff.3mf) |
+| Firmware 1.3 and operation | [Firmware](firmware/README.md) |
+| Remaining documentation | [Next steps](docs/next-steps.md) |
 
-## Använd underlaget
+## Using the files
 
-Öppna 3MF-filen i ett kompatibelt CAD- eller slicerprogram för att granska kapslingen. Modellen anger millimeter som enhet och innehåller två modellobjekt. Utskriftsinställningar och passform behöver kontrolleras före utskrift; se [kapslingens dokumentation](hardware/enclosure/README.md).
+Open the 3MF file in compatible CAD or slicing software to inspect the enclosure. The model uses millimeters and contains two model objects. Check print settings and fit before printing; see the [enclosure documentation](hardware/enclosure/README.md).
 
-Arduino-sketch och beroendeöversikt finns under [firmware](firmware/README.md). Exakt kortprofil, biblioteksversioner och ett fullständigt verifierat kopplingsschema återstår att dokumentera.
+The Arduino sketch and dependency overview are in [firmware](firmware/README.md). The exact board profile, library versions and a fully verified wiring diagram still need to be documented.
 
-## Licens
+## License
 
-Licens är ännu inte vald. Repot innehåller därför ingen öppen källkodslicens.
+A license has not yet been selected. This repository does not currently include an open-source license.

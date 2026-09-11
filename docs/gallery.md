@@ -1,65 +1,65 @@
-# Bildgalleri
+# Photo gallery
 
-Projektets originalbilder, kopierade utan bildbearbetning.
+Original project images, copied without image processing.
 
-## Monterad kapsling
+## Assembled enclosure
 
-![Monterad kapsling](images/enclosure-assembled.jpg)
+![Assembled enclosure](images/enclosure-assembled.jpg)
 
-Lådan med fastskruvat lock. En svart Linksys-adapter ligger bredvid.
+The case with its lid screwed on. A black Linksys power adapter sits beside it.
 
-## Låda och lock
+## Case and lid
 
-![Låda och lock](images/enclosure-open.jpg)
+![Case and lid](images/enclosure-open.jpg)
 
-Kapslingens insida, fästen och kabelurtag.
+The enclosure interior, mounts and cable openings.
 
-## Prototyp
+## Prototype
 
-![Prototyp](images/prototype.jpg)
+![Prototype](images/prototype.jpg)
 
-Elektroniken under arbetet på bänken.
+The electronics on the workbench during development.
 
-## Styrkort
+## Controller board
 
-![Styrkort](images/esp8266.jpg)
+![Controller board](images/esp8266.jpg)
 
-ESP8266-kort med ESP-12E-modul.
+ESP8266 board with an ESP-12E module.
 
-## Strömsensor
+## Current sensor
 
-![Strömsensor](images/ina219-detail.jpg)
+![Current sensor](images/ina219-detail.jpg)
 
-INA219-modulen i närbild.
+A close-up of the INA219 module.
 
-## Strömsensor, ytterligare vy
+## Current sensor, alternate view
 
-![Strömsensor, ytterligare vy](images/ina219-module.png)
+![Current sensor, alternate view](images/ina219-module.png)
 
-Modulens märkningar och anslutningar.
+Module markings and connections.
 
-## DC/DC-modul
+## DC/DC module
 
-![DC/DC-modul](images/dc-dc-module.jpg)
+![DC/DC module](images/dc-dc-module.jpg)
 
-Justerbar spänningsomvandlare.
+Adjustable voltage converter.
 
 ## IRLB8721
 
 ![IRLB8721](images/irlb8721.png)
 
-Separat komponent fotograferad före dokumenterad montering.
+The separate component, photographed before its installation was documented.
 
-## Vit nätadapter
+## White power adapter
 
-![Vit nätadapter](images/power-supply.png)
+![White power adapter](images/power-supply.png)
 
-Märkplåt: 12,0 V DC, 2,0 A och 24,0 W.
+Output rating: 12.0 V DC, 2.0 A and 24.0 W.
 
-## Testkörning
+## Test run
 
-![Testkörning](images/current-test.png)
+![Test run](images/current-test.png)
 
-Filtrerad ström med markerade trösklar.
+Filtered current with marked thresholds. See the [measurement notes](measurements.md) for an English guide to the original Swedish labels.
 
-[Tillbaka till projektet](../README.md)
+[Back to the project](../README.md)

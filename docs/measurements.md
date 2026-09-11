@@ -1,29 +1,39 @@
-# Strömmätning
+# Current measurements
 
-![Testkörning med filtrerad ström och ON/OFF-trösklar](images/current-test.png)
+![Test run showing filtered current and ON/OFF thresholds](images/current-test.png)
 
-## Underlag
+## Source material
 
-Den bifogade grafen heter **Uppmätt spegelström under testkörning**. X-axeln visar sekunder från start och Y-axeln ström i mA. Kurvan är märkt *Filtrerad ström*. Någon rådatafil har inte bifogats. Firmware 1.3 finns nu i repot och använder ett glidande medelvärde över tio strömmätningar med 100 ms avläsningsintervall. Det är inte fastställt att just denna version skapade grafen.
+The original plot is in Swedish. Its title translates to **Measured mirror current during a test run**. The horizontal axis shows seconds since startup; the vertical axis shows current in mA. The curve is labeled *Filtered current*.
 
-## Avläsning
-
-| Observation | Ungefärligt värde |
+| Original label | English |
 | :--- | :--- |
-| ON-tröskel enligt teckenförklaringen | 31 mA |
-| OFF-tröskel enligt teckenförklaringen | 26 mA |
-| Längre platå, ungefär 135–248 s | 315 mA |
-| Högre platåer | 500–520 mA |
-| Högsta synliga topp | 830 mA |
+| Tid från start (s) | Time since startup (s) |
+| Ström (mA) | Current (mA) |
+| Filtrerad ström | Filtered current |
+| ON-tröskel 31 mA | ON threshold 31 mA |
+| OFF-tröskel 26 mA | OFF threshold 26 mA |
 
-Platåer, tider och toppvärde är visuella uppskattningar från bilden. Tröskelvärdena är uttryckligen angivna i grafens teckenförklaring.
+No raw data file was supplied. Firmware 1.3 uses a moving average of ten current samples with a 100 ms read interval. It has not been established whether this exact version produced the plot.
 
-## Logik i firmware 1.3
+## Reading the plot
 
-Skillnaden mellan trösklarna är 5 mA. Koden bekräftar ON när filtrerad ström ligger på minst 31 mA i 700 ms, och OFF vid högst 26 mA i 1000 ms. Mellan trösklarna behålls ett känt tillstånd. Timern startar vid bekräftat ON när automatiken är aktiv och återstartsspärren tillåter det.
+| Observation | Approximate value |
+| :--- | :--- |
+| ON threshold stated in the legend | 31 mA |
+| OFF threshold stated in the legend | 26 mA |
+| Longer plateau, roughly 135–248 s | 315 mA |
+| Higher plateaus | 500–520 mA |
+| Highest visible peak | 830 mA |
 
-Kodens inledande kommentar anger cirka 20–21,5 mA för släckt spegel och 36–40 mA för lägsta tända nivå. Detta är projektets antecknade mätvärden, inte nya mätningar i detta repo.
+Plateaus, times and the peak value are visual estimates from the image. Threshold values are explicitly stated in the legend.
 
-För att återskapa testgrafen behövs rådata och anteckningar om händelserna under körningen samt bekräftelse på vilken firmwareversion som användes.
+## Firmware 1.3 logic
 
-[Firmware och fullständiga timerregler](../firmware/README.md) · [Tillbaka till projektet](../README.md)
+The thresholds are 5 mA apart. The code confirms ON when filtered current stays at or above 31 mA for 700 ms, and OFF at or below 26 mA for 1000 ms. Between thresholds, a known state is retained. Confirmed ON starts the timer when automatic mode is enabled and the rearming condition allows it.
+
+The introductory code comment records approximately 20–21.5 mA with the mirror light off and 36–40 mA at its lowest on level. These are the project's recorded measurements, not new measurements made for this repository.
+
+Reproducing the plot requires raw data, notes about events during the run and confirmation of the firmware version used.
+
+[Firmware and complete timer behavior](../firmware/README.md) · [Back to the project](../README.md)

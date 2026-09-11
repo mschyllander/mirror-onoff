@@ -1,14 +1,15 @@
-# Nästa steg
+# Next steps
 
-- [x] Samla projektbilder med beskrivande filnamn.
-- [x] Lägg till originalmodellen för kapslingen.
-- [x] Presentera hårdvara och testgraf.
-- [x] Beskriv spegelns funktion och vad styrningen tillför.
-- [x] Lägg till befintlig firmware 1.3 och dokumentera dess funktion.
-- [ ] Bekräfta kortprofil, flashlayout och biblioteksversioner; kompilera med den dokumenterade miljön.
-- [ ] Dokumentera och verifiera kopplingsschema mot hårdvaran; GPIO-tabell finns från koden.
-- [ ] Bekräfta vilken nätadapter som används.
-- [ ] Dokumentera utskriftsinställningar och fästdetaljer.
-- [ ] Lägg till rådata och instruktioner för att upprepa mätningen.
-- [ ] Välj licens.
-- [ ] Välj Git-värd, kontonamn och synlighet inför publicering.
+- [x] Collect project photos with descriptive filenames.
+- [x] Include the original enclosure model.
+- [x] Present the hardware and test plot.
+- [x] Describe the mirror's behavior and the controller's purpose.
+- [x] Include firmware 1.3 and document its operation.
+- [x] Write the repository documentation in English.
+- [ ] Confirm the board profile, flash layout and library versions; compile using the documented environment.
+- [ ] Document and verify the wiring diagram against the hardware; GPIO assignments are available from the source.
+- [ ] Confirm which power adapter is used.
+- [ ] Document print settings and mounting hardware.
+- [ ] Add raw data and instructions for repeating the measurement.
+- [ ] Select a license.
+- [ ] Choose the Git hosting account and repository visibility before publishing.

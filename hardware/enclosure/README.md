@@ -1,24 +1,24 @@
-# Kapsling
+# Enclosure
 
-![Printad kapsling och lock](../../docs/images/enclosure-open.jpg)
+![Printed enclosure and lid](../../docs/images/enclosure-open.jpg)
 
-[Ladda ned 3MF-modellen](Box_mirror_onoff.3mf)
+[Download the 3MF model](Box_mirror_onoff.3mf)
 
-Originalfilen är kopierad utan ändringar. 3MF-arkivet går att läsa och innehåller en modell med två objekt, millimeter som enhet och en inbäddad förhandsbild. Geometrins utskrivbarhet och passform har inte verifierats.
+The original file is included unchanged. The 3MF archive is readable and contains a model with two objects, millimeter units and an embedded preview. Printability and fit have not been verified.
 
-## Förhandsbild från filen
+## Embedded model preview
 
-![Inbäddad förhandsbild av modellen](../../docs/images/enclosure-model.png)
+![Model preview embedded in the 3MF file](../../docs/images/enclosure-model.png)
 
-## Utskriftsuppgifter att komplettera
+## Print details to document
 
-| Uppgift | Status |
+| Detail | Status |
 | :--- | :--- |
-| Material | Ej angivet |
-| Munstycke och lagerhöjd | Ej angivet |
-| Väggar och fyllnadsgrad | Ej angivet |
-| Orientering och stöd | Ej angivet |
-| Skruvar och muttrar | Dimensioner ej angivna |
-| Passform mot elektroniken | Ej verifierad i detta repo |
+| Material | Not specified |
+| Nozzle and layer height | Not specified |
+| Walls and infill | Not specified |
+| Orientation and supports | Not specified |
+| Screws and nuts | Sizes not specified |
+| Fit around the electronics | Not verified in this repository |
 
-[Tillbaka till projektet](../../README.md)
+[Back to the project](../../README.md)

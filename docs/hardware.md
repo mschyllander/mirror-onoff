@@ -1,37 +1,37 @@
-# Hårdvara
+# Hardware
 
-Denna översikt bygger på projektbilderna och den bifogade firmwareversionen 1.3. Den är en inventering, inte ett verifierat kopplingsschema.
+This overview is based on the project photos and firmware version 1.3. It is a component inventory, not a verified wiring diagram.
 
-| Del | Identifiering i bilderna | Återstår att dokumentera |
+| Part | Identification from the photos | Still to document |
 | :--- | :--- | :--- |
-| Styrkort | ESP8266, modul märkt ESP-12E; kort med D0–D8 och micro-USB | Exakt kortvariant och matning |
-| Strömsensor | INA219 DC Current Sensor, shunt märkt R100 | Fysisk I²C-adress och faktisk inkoppling; koden använder standardkonstruktor och 32 V / 2 A-kalibrering |
-| Transistor | Separat komponent märkt IRLB8721 | Funktion i kretsen och anslutningar |
-| DC/DC-modul | Justerbar modul med trimpotentiometer | Exakt modell samt inställd in- och utspänning |
-| Vit nätadapter | Royal BI24G-120200-AdV, utgång 12,0 V DC / 2,0 A / 24,0 W | Vilken adapter som används i den slutliga konstruktionen |
-| Svart nätadapter | Linksys-adapter synlig bredvid kapslingen | Märkdata och roll i projektet |
-| Kapsling | Printad låda med separat skruvat lock | Material, skruvdimensioner och monteringsmått |
+| Controller | ESP8266, module marked ESP-12E; board with D0–D8 and micro-USB | Exact board variant and power connection |
+| Current sensor | INA219 DC Current Sensor, shunt marked R100 | Physical I²C address and wiring; code uses the default constructor and 32 V / 2 A calibration |
+| Transistor | Separate component marked IRLB8721 | Confirm its installation and connections in the MOSFET switching circuit |
+| DC/DC module | Adjustable module with a trimmer potentiometer | Exact model and configured input/output voltages |
+| White power adapter | Royal BI24G-120200-AdV, output 12.0 V DC / 2.0 A / 24.0 W | Which adapter is used in the final build |
+| Black power adapter | Linksys adapter visible beside the enclosure | Ratings and role in the project |
+| Enclosure | Printed case with a separate screw-fastened lid | Material, screw sizes and mounting dimensions |
 
-## GPIO enligt koden
+## GPIO assignments in the source
 
-| Signal | Kortpinne | GPIO | Anslutning enligt källan |
+| Signal | Board pin | GPIO | Connection described in the source |
 | :--- | :--- | :--- | :--- |
-| MOSFET-styrning | D1 | 5 | Gate via 100 Ω; gate till GND via 10 kΩ enligt kodkommentaren |
-| INA219 SDA | D2 | 4 | I²C-data |
-| INA219 SCL | D5 | 14 | I²C-klocka |
+| MOSFET control | D1 | 5 | Gate through 100 Ω; gate to GND through 10 kΩ, according to the code comment |
+| INA219 SDA | D2 | 4 | I²C data |
+| INA219 SCL | D5 | 14 | I²C clock |
 
-`setMirrorPower()` sätter D1 HIGH för matning på och LOW för av. Pinnarna används i implementationen; motståndsvärdena kommer från kodens inledande kommentar. Den faktiska inkopplingen behöver fortfarande verifieras mot bygget.
+`setMirrorPower()` drives D1 HIGH for power on and LOW for power off. These pins are used in the implementation; the resistor values come from the introductory code comment. The physical wiring still needs to be checked against the build.
 
-## Koppling
+## Wiring
 
-Fotografierna räcker inte för att fastställa ledningsdragningen. Följande behövs för ett reproducerbart bygge:
+The photos do not establish the complete wiring. A reproducible build needs:
 
-- Matningens väg genom spegel, sensor och styrkort.
-- Anslutningar för INA219: VCC, GND, SDA och SCL samt VIN+ och VIN−.
-- IRLB8721:s funktion, anslutningar och eventuella kringkomponenter.
-- DC/DC-modulens inställda utspänning och anslutningspunkt på styrkortet.
-- Kontakternas polaritet samt en komplett GPIO-tabell.
+- The supply path through the mirror, sensor and controller.
+- INA219 connections: VCC, GND, SDA, SCL, VIN+ and VIN−.
+- IRLB8721 connections and any supporting components.
+- The DC/DC module's configured output voltage and connection to the controller.
+- Connector polarity and confirmation of the GPIO assignments above.
 
-Ingen anslutning ska härledas enbart från kabelfärgerna i bilderna.
+Do not infer connections solely from wire colors in the photos.
 
-[Se komponentbilderna](gallery.md) · [Tillbaka till projektet](../README.md)
+[Component photos](gallery.md) · [Back to the project](../README.md)
