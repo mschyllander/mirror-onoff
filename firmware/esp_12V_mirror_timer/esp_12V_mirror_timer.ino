@@ -1,7 +1,7 @@
 /*
    ============================================================
                  MR MATZO MIRROR CONTROLLER
-                        Version 1.4.0
+                        Version 1.4.1
    ============================================================
 
    ESP8266 + INA219 + MOSFET + LittleFS + mDNS
@@ -49,7 +49,7 @@
 // VERSION / NETWORK
 // ============================================================
 
-const char* FW_VERSION = "MrMatzo Mirror Controller 1.4.0";
+const char* FW_VERSION = "MrMatzo Mirror Controller 1.4.1";
 
 const char* MDNS_HOSTNAME = "mirror";
 
@@ -76,8 +76,9 @@ bool stationWasConnected = false;
 String adminNonce;
 const char* FAULT_FILE = "/shutdown_fault.txt";
 const char* ADMIN_PASSWORD = MIRROR_ADMIN_PASSWORD;
-static_assert(sizeof(MIRROR_ADMIN_PASSWORD) >= 17 && sizeof(MIRROR_ADMIN_PASSWORD) <= 64,
-              "Choose a 16-63 character admin / Wi-Fi password");
+static_assert(sizeof(MIRROR_ADMIN_PASSWORD) > 1, "Set an admin password");
+static_assert(sizeof(MIRROR_AP_PASSWORD) >= 9 && sizeof(MIRROR_AP_PASSWORD) <= 64,
+              "Choose an 8-63 character Wi-Fi password");
 
 
 // ============================================================
@@ -3814,7 +3815,7 @@ void setupWiFi()
   WiFi.persistent(false);
   WiFi.mode(WIFI_AP_STA);
   WiFi.hostname(MDNS_HOSTNAME);
-  WiFi.softAP("Mirror-Setup", ADMIN_PASSWORD);
+  WiFi.softAP("Mirror-Setup", MIRROR_AP_PASSWORD);
   WiFi.setAutoReconnect(true);
   WiFi.begin(); // Reuse credentials already stored by firmware 1.3.
   Serial.println("Direct Wi-Fi: Mirror-Setup / http://192.168.4.1");

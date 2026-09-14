@@ -26,7 +26,7 @@ MrMatzo Mirror Controller is an ESP8266 timer app that switches a mirror's 12 V 
 
 The local web app at [mirror.local](http://mirror.local) displays current, voltage, power and remaining time. It also lets you set the timer duration and control the supply manually.
 
-**Firmware 1.4.0 adds automatic shutdown recovery and password-protected browser OTA.** It has been compiled for NodeMCU 1.0 (ESP-12E) and checked with automated control-logic and upload-handler tests. Physical verification on the mirror is still required. The web interface and status messages are in Swedish. See [installation and OTA](firmware/README.md).
+**Firmware 1.4.1 includes automatic shutdown recovery and password-protected browser OTA, with separate web and direct Wi-Fi passwords.** It has been compiled for NodeMCU 1.0 (ESP-12E) and checked with automated control-logic and upload-handler tests. Physical verification on the mirror is still required. The web interface and status messages are in Swedish. See [installation and OTA](firmware/README.md).
 
 ## How the timer works
 

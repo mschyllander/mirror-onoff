@@ -1,4 +1,4 @@
-# Firmware · MrMatzo Mirror Controller 1.4.0
+# Firmware · MrMatzo Mirror Controller 1.4.1
 
 [Arduino sketch](esp_12V_mirror_timer/esp_12V_mirror_timer.ino) · [Release notes](../CHANGELOG.md)
 
@@ -7,11 +7,11 @@
 Version 1.3 has no OTA receiver. It must be replaced over USB once. Version 1.4.0 adds a browser upload page at `/update`; future updates can use that page.
 
 1. Copy `DeviceConfig.example.h` to `DeviceConfig.h` in the sketch folder.
-2. Set `MIRROR_ADMIN_PASSWORD` to your own random password of 16–63 ASCII characters. The same password protects direct Wi-Fi and the admin pages. The private header is ignored by Git; keep it for future builds.
+2. Set `MIRROR_ADMIN_PASSWORD` for the admin/update pages and `MIRROR_AP_PASSWORD` for direct Wi-Fi (8–63 ASCII characters). These are independent as of 1.4.1. The private header is ignored by Git; keep it for future builds.
 3. Open `esp_12V_mirror_timer.ino` in Arduino IDE. Select **NodeMCU 1.0 (ESP-12E Module)** for the photographed board, and verify the actual board and flash capacity before uploading.
 4. Compile and upload over USB using the settings below. Preserve the filesystem and Wi-Fi settings; do not erase all flash.
-5. Open [mirror.local](http://mirror.local) on the same network, or use the device IP address. For a direct connection, join **Mirror-Setup** using your configured password and open [192.168.4.1](http://192.168.4.1).
-6. Select **UPPDATERA**, sign in as `admin` with your configured password, select the firmware `.bin` and install it. Keep the controller powered until it restarts, then check the firmware version at `/status`.
+5. Open [mirror.local](http://mirror.local) on the same network, or use the device IP address. For a direct connection, join **Mirror-Setup** using your configured Wi-Fi password and open [192.168.4.1](http://192.168.4.1).
+6. Select **UPPDATERA**, sign in as `admin` with your configured admin password, select the firmware `.bin` and install it. Keep the controller powered until it restarts, then check the firmware version at `/status`.
 
 The spelling is `mirror.local`. Hostname resolution depends on the client/network; the IP address is the fallback. Direct Wi-Fi does not require a router or internet access. A phone may report that Mirror-Setup has no internet; stay connected to use the controller.
 
@@ -70,7 +70,7 @@ If the sensor is missing at startup, the UI reports a sensor error and normal cu
 - `/wifi` lets an authenticated administrator save new router credentials. Existing credentials from 1.3 are reused. Timer processing no longer waits for router connection or a blocking setup portal.
 - OTA and Wi-Fi configuration use HTTP Digest authentication and a per-boot form token. Firmware uploads accept `.bin` files and write only the firmware area, not a filesystem image.
 - An authorized firmware upload turns the mirror supply off and cancels pending automatic restoration. Failed or aborted uploads leave it off. A successful upload restarts the controller.
-- Keep using the same private password header when building updates, unless intentionally changing the password. No device password is committed to this repository or returned by `/status`.
+- Keep using the same private password header when building updates, unless intentionally changing a password. No device password is committed to this repository or returned by `/status`.
 - Ordinary mirror controls remain unauthenticated on the local network, as in 1.3. HTTP is not encrypted; do not expose the controller through internet port forwarding. OTA images are not cryptographically signed.
 
 ## Logs and endpoints

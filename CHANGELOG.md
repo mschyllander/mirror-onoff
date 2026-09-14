@@ -1,5 +1,10 @@
 # Changelog
 
+## 1.4.1 — 2026-09-14
+
+- Separate the web admin password from the direct Wi-Fi password, allowing a shorter web password without changing the access point.
+- Keep device-specific credentials in the private, gitignored configuration.
+
 ## 1.4.0 — 2026-09-14
 
 - Fix the automatic shutdown deadlock when the mirror returns illuminated after a power cycle.

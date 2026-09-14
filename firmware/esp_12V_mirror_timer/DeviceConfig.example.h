@@ -1,5 +1,6 @@
 #pragma once
-// Copy to DeviceConfig.h (gitignored) before compiling.
-// Use your own random 16+ character password; never commit DeviceConfig.h.
-// This password protects both Mirror-Setup Wi-Fi and the admin/update pages.
+// Copy to DeviceConfig.h (gitignored). Choose your own passwords.
+// Web admin password and direct Wi-Fi password are independent.
 #define MIRROR_ADMIN_PASSWORD ""
+// WPA2 requires 8-63 characters for the direct Mirror-Setup network.
+#define MIRROR_AP_PASSWORD ""
