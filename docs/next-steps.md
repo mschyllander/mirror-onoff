@@ -8,8 +8,9 @@
 - [x] Write the repository documentation in English.
 - [x] Compile firmware 1.4.0 with documented NodeMCU / ESP8266 core / library versions.
 - [x] Add and test bounded shutdown recovery and browser OTA.
-- [ ] Verify actual board flash layout and install 1.4.0 over USB.
-- [ ] Verify shutdown recovery, direct Wi-Fi and OTA on the physical mirror.
+- [x] Verify actual board flash layout, back up flash and install 1.4.0 over USB.
+- [x] Verify authenticated OTA transfer, reboot, log event and preserved settings on the device.
+- [ ] Verify shutdown recovery with the mirror connected and test a separate direct Wi-Fi connection.
 - [ ] Document and verify the wiring diagram against the hardware; GPIO assignments are available from the source.
 - [ ] Confirm which power adapter is used.
 - [ ] Document print settings and mounting hardware.

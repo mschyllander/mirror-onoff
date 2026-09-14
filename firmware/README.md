@@ -32,7 +32,7 @@ The remaining libraries are supplied by the ESP8266 core: WiFi, WebServer, mDNS,
 arduino-cli compile --fqbn esp8266:esp8266:nodemcuv2 firmware/esp_12V_mirror_timer
 ```
 
-Use the same flash layout as the installed firmware to retain logs/settings. The original device's layout has not yet been read back. A binary built with your private header contains the password and should not be published as a generic release artifact.
+Use the same flash layout as the installed firmware to retain logs/settings. The project device was read back on 2026-09-14: 4 MB flash with LittleFS from `0x200000` to `0x3FA000`, matching this profile. A binary built with your private header contains the password and should not be published as a generic release artifact.
 
 ## Automatic shutdown recovery
 
@@ -102,6 +102,6 @@ python tests/test_ota.py
 
 These tests compile the actual sketch functions with C++ hardware stubs. They cover the observed 524 mA recovery failure, normal rearming, bounded retries, manual cancellation, unknown state, a missing sensor during recovery, threshold timing, millis rollover and filtering. Upload tests cover authentication, form tokens, missing/wrong files, flash errors, aborts and successful retry.
 
-The firmware compiles for the profile above. These checks do not substitute for a real USB installation, direct Wi-Fi connection, OTA transfer and shutdown test on the mirror.
+The firmware compiles for the profile above. On 2026-09-14, version 1.4.0 was installed over USB on the project device after a full flash backup. An authenticated OTA transfer of the same firmware completed successfully, followed by a verified reboot and `OTA_SUCCESS` in the log. The timer setting and filesystem were retained. Both the local hostname and LAN IP responded, the INA219 was detected, and unauthenticated access to `/update` returned HTTP 401. A separate direct Wi-Fi connection and physical mirror shutdown/retry test remain outstanding.
 
 [Back to the project](../README.md)
