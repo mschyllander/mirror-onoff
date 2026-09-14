@@ -1,6 +1,6 @@
 # Hardware
 
-This overview is based on the project photos and firmware version 1.3. It is a component inventory, not a verified wiring diagram.
+This overview is based on the project photos and firmware (GPIO assignments unchanged in 1.4.0). It is a component inventory, not a verified wiring diagram.
 
 | Part | Identification from the photos | Still to document |
 | :--- | :--- | :--- |

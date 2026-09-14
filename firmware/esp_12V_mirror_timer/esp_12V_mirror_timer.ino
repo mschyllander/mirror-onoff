@@ -1,7 +1,7 @@
 /*
    ============================================================
                  MR MATZO MIRROR CONTROLLER
-                        Version 1.3
+                        Version 1.4.0
    ============================================================
 
    ESP8266 + INA219 + MOSFET + LittleFS + mDNS
@@ -37,7 +37,9 @@
 #include <ESP8266WiFi.h>
 #include <ESP8266WebServer.h>
 #include <ESP8266mDNS.h>
-#include <WiFiManager.h>
+#include <Updater.h>
+#include "ShutdownRecovery.h"
+#include "DeviceConfig.h"
 #include <Wire.h>
 #include <Adafruit_INA219.h>
 #include <LittleFS.h>
@@ -47,7 +49,7 @@
 // VERSION / NETWORK
 // ============================================================
 
-const char* FW_VERSION = "MrMatzo Mirror Controller 1.3";
+const char* FW_VERSION = "MrMatzo Mirror Controller 1.4.0";
 
 const char* MDNS_HOSTNAME = "mirror";
 
@@ -62,6 +64,20 @@ const uint8_t I2C_SCL_PIN = D5;
 
 ESP8266WebServer server(80);
 Adafruit_INA219 ina219;
+ShutdownRecovery recovery;
+bool otaInProgress = false;
+bool otaSucceeded = false;
+bool otaFailed = false;
+bool otaAuthorized = false;
+unsigned long otaLastActivity = 0;
+bool fsOK = false;
+bool mdnsStarted = false;
+bool stationWasConnected = false;
+String adminNonce;
+const char* FAULT_FILE = "/shutdown_fault.txt";
+const char* ADMIN_PASSWORD = MIRROR_ADMIN_PASSWORD;
+static_assert(sizeof(MIRROR_ADMIN_PASSWORD) >= 17 && sizeof(MIRROR_ADMIN_PASSWORD) <= 64,
+              "Choose a 16-63 character admin / Wi-Fi password");
 
 
 // ============================================================
@@ -192,6 +208,8 @@ String jsonEscape(String s)
 
 String getStateText()
 {
+  if (otaInProgress) return "UPPDATERAR PROGRAMVARAN";
+  if (recovery.fault) return "AVSTÄNGD EFTER SLÄCKFEL";
   if (!inaOK)
     return "SENSORFEL";
 
@@ -216,7 +234,7 @@ String getStateText()
       return "SPEGEL TÄND";
 
     if (requireOffBeforeRearm)
-      return "SPEGEL FORTFARANDE TÄND";
+      return "KONTROLLERAR SLÄCKNING";
 
     return "SPEGEL TÄND";
   }
@@ -227,11 +245,13 @@ String getStateText()
 
 String getDescriptionText()
 {
+  if (otaInProgress) return "Matningen är av under uppdateringen. Bryt inte strömmen till styrenheten.";
+  if (recovery.fault) return "Spegeln slocknade inte efter tre försök. 12 V är av. Tryck SPEGELSTRÖM PÅ för att försöka igen.";
   if (!inaOK)
     return "Strömsensorn INA219 kunde inte hittas.";
 
   if (resetInProgress)
-    return "Strömmen är bruten i 3 sekunder för att återställa spegeln.";
+    return "Strömmen är tillfälligt bruten för att återställa spegeln.";
 
   if (!powerOn)
     return "12 V till spegeln är manuellt frånkopplad.";
@@ -251,7 +271,7 @@ String getDescriptionText()
       return "Ljuset är tänt. Automatisk avstängning är avstängd.";
 
     if (requireOffBeforeRearm)
-      return "Väntar tills spegeln verkligen är släckt innan en ny timer kan starta.";
+      return "Kontrollerar släckningen. Vid behov görs ett längre släckförsök.";
 
     return "Ljuset är tänt.";
   }
@@ -323,6 +343,7 @@ void rotateLogIfNeeded()
 
 void writeLog(const String& event)
 {
+  if (!fsOK || otaInProgress) return;
   rotateLogIfNeeded();
 
   File f =
@@ -662,6 +683,7 @@ unsigned long getRemainingMs()
 
 void beginPowerCycle()
 {
+  recovery.beginAttempt();
   timerActive =
     false;
 
@@ -691,7 +713,8 @@ void beginPowerCycle()
   );
 
   logEvent(
-    "TIMER_EXPIRED_POWER_OFF"
+    recovery.attempts == 1 ? "TIMER_EXPIRED_POWER_OFF" :
+    "SHUTDOWN_RETRY_" + String(recovery.attempts)
   );
 }
 
@@ -718,13 +741,14 @@ void processTimer()
 
 void processPowerCycle()
 {
+  if (otaInProgress || recovery.fault) return;
   if (!resetInProgress)
     return;
 
   if (
     millis() -
     resetStarted <
-    POWER_OFF_TIME_MS
+    (recovery.pending ? recovery.offTimeMs() : POWER_OFF_TIME_MS)
   )
   {
     return;
@@ -756,6 +780,8 @@ void processPowerCycle()
 
   offCandidate =
     false;
+
+  recovery.restored(millis());
 
   logEvent(
     "POWER_RESTORED"
@@ -805,6 +831,8 @@ void processSensorLockout()
 
 void confirmedMirrorOff()
 {
+  if (recovery.pending) logEvent("SHUTDOWN_CONFIRMED_OFF");
+  recovery.clear();
   bool wasOn =
     mirrorStateValid &&
     mirrorIsOn;
@@ -2076,6 +2104,8 @@ input[type=number]
       VISA LOGG
 
     </button>
+    <button onclick="location.href='/update'">UPPDATERA</button>
+    <button onclick="location.href='/log/old/download'">FÖREGÅENDE LOGG</button>
 
 
     <button
@@ -2095,7 +2125,7 @@ input[type=number]
 
 
     <button
-      onclick="resetWiFi()">
+      onclick="location.href='/wifi'">
 
       WIFI
 
@@ -2890,6 +2920,10 @@ void handleRoot()
 void handleStatus()
 {
   String json = "{";
+  json += "\"shutdownFault\":" + String(recovery.fault ? "true" : "false");
+  json += ",\"shutdownAttempt\":" + String(recovery.attempts);
+  json += ",\"otaInProgress\":" + String(otaInProgress ? "true" : "false");
+  json += ",\"apIP\":\"" + WiFi.softAPIP().toString() + "\",";
 
 
   json += "\"sensorOK\":";
@@ -3240,6 +3274,8 @@ void clearLog()
 
 void manualPowerOn()
 {
+  recovery.clear();
+  if (fsOK) LittleFS.remove(FAULT_FILE);
   timerActive =
     false;
 
@@ -3291,6 +3327,9 @@ void manualPowerOn()
 
 void manualPowerOff()
 {
+  recovery.pending = false;
+  recovery.attempts = 0;
+  requireOffBeforeRearm = false;
   timerActive =
     false;
 
@@ -3368,12 +3407,160 @@ void toggleAutomaticMode()
 }
 
 
+
+void processShutdownRecovery()
+{
+  if (!recovery.pending || resetInProgress || sensorLockout || otaInProgress) return;
+  ShutdownRecovery::Action action = recovery.evaluate(millis(), mirrorStateValid, mirrorIsOn);
+  if (action == ShutdownRecovery::Retry) {
+    beginPowerCycle();
+  } else if (action == ShutdownRecovery::LatchOff) {
+    recovery.fault = true;
+    recovery.pending = false;
+    timerActive = false;
+    requireOffBeforeRearm = false;
+    mirrorStateValid = false;
+    mirrorIsOn = false;
+    setMirrorPower(false);
+    if (fsOK) {
+      File f = LittleFS.open(FAULT_FILE, "w");
+      if (f) { f.print("1"); f.close(); }
+    }
+    logEvent("SHUTDOWN_FAILED_LATCHED_OFF");
+  }
+}
+
+bool authenticateAdmin()
+{
+  if (server.authenticate("admin", ADMIN_PASSWORD)) return true;
+  server.requestAuthentication(DIGEST_AUTH, "Mirror admin");
+  return false;
+}
+
+bool validAdminRequest()
+{
+  return server.authenticate("admin", ADMIN_PASSWORD) &&
+         server.hasArg("token") && server.arg("token") == adminNonce;
+}
+
+void handleUpdatePage()
+{
+  if (!authenticateAdmin()) return;
+  String page = F("<!doctype html><html lang='sv'><meta charset='utf-8'><meta name='viewport' content='width=device-width,initial-scale=1'>"
+    "<title>Uppdatera spegeln</title><body style='font:18px system-ui;max-width:650px;margin:40px auto;padding:20px'>"
+    "<h1>Uppdatera spegeln</h1><p>Välj firmwarefilen (.bin). Spegelns 12 V stängs av medan filen överförs. "
+    "Låt styrenhetens ström vara ansluten tills den har startat om.</p><form method='POST' enctype='multipart/form-data' action='/update?token=");
+  page += adminNonce;
+  page += F("'><input type='file' name='firmware' accept='.bin' required><p><button>Installera uppdatering</button></p></form><a href='/'>Tillbaka</a></body></html>");
+  server.sendHeader("Cache-Control", "no-store");
+  server.send(200, "text/html; charset=utf-8", page);
+}
+
+void handleFirmwareUpload()
+{
+  HTTPUpload& upload = server.upload();
+  otaLastActivity = millis();
+  if (upload.status == UPLOAD_FILE_START) {
+    otaAuthorized = validAdminRequest();
+    otaSucceeded = false;
+    otaFailed = false;
+    if (!otaAuthorized) return;
+    if (otaInProgress || upload.name != "firmware" || !upload.filename.endsWith(".bin")) {
+      otaFailed = true;
+      return;
+    }
+    // Abort automatic recovery as well: no power restoration during a flash write.
+    manualPowerOff();
+    logEvent("OTA_STARTED");
+    otaInProgress = true;
+    uint32_t freeSpace = ESP.getFreeSketchSpace();
+    if (freeSpace <= 0x1000 || !Update.begin((freeSpace - 0x1000) & 0xFFFFF000, U_FLASH))
+      otaFailed = true;
+  } else if (otaAuthorized && upload.status == UPLOAD_FILE_WRITE && !otaFailed) {
+    if (Update.write(upload.buf, upload.currentSize) != upload.currentSize) otaFailed = true;
+  } else if (otaAuthorized && upload.status == UPLOAD_FILE_END) {
+    if (!otaFailed) otaSucceeded = Update.end(true);
+    if (!otaSucceeded) {
+      if (Update.isRunning()) Update.end();
+      otaFailed = true;
+    }
+    otaInProgress = false;
+    logEvent(otaSucceeded ? "OTA_SUCCESS" : "OTA_FAILED");
+  } else if (otaAuthorized && upload.status == UPLOAD_FILE_ABORTED) {
+    if (Update.isRunning()) Update.end();
+    otaFailed = true;
+    otaInProgress = false;
+    logEvent("OTA_ABORTED");
+  }
+  yield();
+}
+
+void finishFirmwareUpload()
+{
+  if (!authenticateAdmin()) return;
+  if (!validAdminRequest()) { server.send(403, "text/plain", "Invalid update token"); return; }
+  if (otaInProgress) {
+    if (Update.isRunning()) Update.end();
+    otaInProgress = false;
+    otaFailed = true;
+    logEvent("OTA_FAILED");
+  }
+  if (!otaAuthorized || !otaSucceeded || otaFailed) {
+    server.send(400, "text/plain; charset=utf-8", "Uppdateringen misslyckades. Välj rätt firmwarefil och försök igen. Om överföringen hade startat lämnas spegelmatningen av.");
+    return;
+  }
+  server.send(200, "text/html; charset=utf-8", "<meta http-equiv='refresh' content='20;url=/'><h1>Uppdateringen är klar</h1><p>Spegelkontrollen startar om. Vänta cirka 20 sekunder.</p>");
+  delay(300);
+  ESP.restart();
+}
+
+void handleWiFiPage()
+{
+  if (!authenticateAdmin()) return;
+  String page = F("<!doctype html><html lang='sv'><meta charset='utf-8'><meta name='viewport' content='width=device-width,initial-scale=1'>"
+    "<title>Spegelns Wi-Fi</title><body style='font:18px system-ui;max-width:650px;margin:40px auto;padding:20px'>"
+    "<h1>Spegelns Wi-Fi</h1><p>Direktanslutning: Mirror-Setup. Öppna http://192.168.4.1 om mirror.local inte fungerar.</p>"
+    "<form method='POST' action='/wifi'><label>Nätverksnamn<br><input name='ssid' maxlength='32' required></label><p>"
+    "<label>Wi-Fi-lösenord<br><input type='password' name='password' maxlength='64'></label></p><input type='hidden' name='token' value='");
+  page += adminNonce;
+  page += F("'><button>Spara och anslut</button></form><p><a href='/'>Tillbaka</a></p></body></html>");
+  server.sendHeader("Cache-Control", "no-store");
+  server.send(200, "text/html; charset=utf-8", page);
+}
+
+void saveWiFi()
+{
+  if (!authenticateAdmin()) return;
+  if (!validAdminRequest()) { server.send(403, "text/plain", "Invalid token"); return; }
+  String ssid = server.arg("ssid");
+  String password = server.arg("password");
+  if (!ssid.length() || ssid.length() > 32 || password.length() > 64) {
+    server.send(400, "text/plain", "Invalid Wi-Fi settings"); return;
+  }
+  server.send(200, "text/html; charset=utf-8", "<h1>Inställningarna sparas</h1><p>Anslut till ditt nätverk och öppna http://mirror.local eller stanna på Mirror-Setup och öppna http://192.168.4.1.</p><a href='/'>Tillbaka</a>");
+  WiFi.persistent(true);
+  WiFi.begin(ssid.c_str(), password.c_str());
+  WiFi.persistent(false);
+  logEvent("WIFI_SETTINGS_CHANGED");
+}
+
 // ============================================================
 // WEB ROUTES
 // ============================================================
 
 void setupWebServer()
 {
+  server.on("/update", HTTP_GET, handleUpdatePage);
+  server.on("/update", HTTP_POST, finishFirmwareUpload, handleFirmwareUpload);
+  server.on("/wifi", HTTP_GET, handleWiFiPage);
+  server.on("/wifi", HTTP_POST, saveWiFi);
+  server.on("/log/old/download", HTTP_GET, []() {
+    if (!LittleFS.exists(OLD_LOG_FILE)) { server.send(404, "text/plain", "No archived log"); return; }
+    File f = LittleFS.open(OLD_LOG_FILE, "r");
+    server.sendHeader("Content-Disposition", "attachment; filename=mirror_log_old.csv");
+    server.streamFile(f, "text/csv");
+    f.close();
+  });
   server.on(
     "/",
     handleRoot
@@ -3522,6 +3709,7 @@ void setupWebServer()
         !resetInProgress
       )
       {
+        recovery.clear();
         timerActive =
           false;
 
@@ -3590,38 +3778,10 @@ void setupWebServer()
   );
 
 
-  server.on(
-    "/wifi-reset",
-    []()
-    {
-      logEvent(
-        "WIFI_RESET"
-      );
-
-
-      server.send(
-        200,
-        "text/plain",
-        "Restarting..."
-      );
-
-
-      delay(500);
-
-
-      WiFiManager wm;
-
-
-      wm.resetSettings();
-
-
-      delay(300);
-
-
-      ESP.restart();
-    }
-  );
-
+  server.on("/wifi-reset", HTTP_GET, []() {
+    server.sendHeader("Location", "/wifi");
+    server.send(303);
+  });
 
   server.onNotFound(
     []()
@@ -3650,51 +3810,14 @@ void setupWebServer()
 
 void setupWiFi()
 {
-  WiFi.mode(
-    WIFI_STA
-  );
-
-
-  WiFiManager wm;
-
-
-  wm.setConfigPortalTimeout(
-    300
-  );
-
-
-  bool connected =
-    wm.autoConnect(
-      "Mirror-Setup"
-    );
-
-
-  if (!connected)
-  {
-    delay(1500);
-
-    ESP.restart();
-  }
-
-
-  Serial.println();
-
-  Serial.print(
-    "WiFi: "
-  );
-
-  Serial.println(
-    WiFi.SSID()
-  );
-
-
-  Serial.print(
-    "IP: "
-  );
-
-  Serial.println(
-    WiFi.localIP()
-  );
+  // The controller runs even without a router; no blocking portal or restart loop.
+  WiFi.persistent(false);
+  WiFi.mode(WIFI_AP_STA);
+  WiFi.hostname(MDNS_HOSTNAME);
+  WiFi.softAP("Mirror-Setup", ADMIN_PASSWORD);
+  WiFi.setAutoReconnect(true);
+  WiFi.begin(); // Reuse credentials already stored by firmware 1.3.
+  Serial.println("Direct Wi-Fi: Mirror-Setup / http://192.168.4.1");
 }
 
 
@@ -3704,54 +3827,9 @@ void setupWiFi()
 
 void setupMDNS()
 {
-  Serial.println();
-  Serial.println(
-    "Starting mDNS..."
-  );
-
-
-  if (
-    MDNS.begin(
-      MDNS_HOSTNAME
-    )
-  )
-  {
-    // Advertise the HTTP web server.
-    MDNS.addService(
-      "http",
-      "tcp",
-      80
-    );
-
-
-    Serial.println(
-      "mDNS started successfully"
-    );
-
-    Serial.println(
-      "Open:"
-    );
-
-    Serial.println(
-      "http://mirror.local"
-    );
-
-
-    logEvent(
-      "MDNS_STARTED_MIRROR_LOCAL"
-    );
-  }
-  else
-  {
-    Serial.println(
-      "mDNS failed"
-    );
-
-
-    logEvent(
-      "MDNS_ERROR"
-    );
-  }
+  if (mdnsStarted) MDNS.close();
+  mdnsStarted = MDNS.begin(MDNS_HOSTNAME);
+  if (mdnsStarted) MDNS.addService("http", "tcp", 80);
 }
 
 
@@ -3785,16 +3863,15 @@ void setup()
   );
 
 
-  setMirrorPower(
-    true
-  );
+  setMirrorPower(false);
 
 
   // ----------------------------------------------------------
   // LITTLEFS
   // ----------------------------------------------------------
 
-  if (LittleFS.begin())
+  fsOK = LittleFS.begin();
+  if (fsOK)
   {
     loadSession();
 
@@ -3813,6 +3890,10 @@ void setup()
     );
   }
 
+
+  recovery.fault = fsOK && LittleFS.exists(FAULT_FILE);
+  setMirrorPower(!recovery.fault);
+  adminNonce = String(ESP.random(), HEX) + String(ESP.random(), HEX);
 
   // ----------------------------------------------------------
   // I2C
@@ -3892,7 +3973,7 @@ void setup()
   // ----------------------------------------------------------
   // mDNS
   //
-  // Must be started AFTER WiFi is connected.
+  // Start on the direct access point, then refresh when the station connects.
   // ----------------------------------------------------------
 
   setupMDNS();
@@ -3989,17 +4070,33 @@ void loop()
 {
   // Web server
   server.handleClient();
+  bool stationConnected = WiFi.status() == WL_CONNECTED;
+  if (stationConnected != stationWasConnected) {
+    stationWasConnected = stationConnected;
+    setupMDNS();
+  }
 
 
   // mDNS
   MDNS.update();
 
 
+  if (otaInProgress) {
+    if (millis() - otaLastActivity > 30000UL) {
+      if (Update.isRunning()) Update.end();
+      otaInProgress = false;
+      otaFailed = true;
+      logEvent("OTA_TIMEOUT");
+    }
+    yield();
+    return;
+  }
+
   // INA219
   readINA219();
 
 
-  // 3 second mirror power-cycle
+  // Manual power cycle or bounded automatic shutdown attempt.
   processPowerCycle();
 
 
@@ -4010,6 +4107,9 @@ void loop()
   // Detect physical mirror light
   processMirrorDetection();
 
+
+  // Never strand the controller in requireOffBeforeRearm.
+  processShutdownRecovery();
 
   // Automatic shutdown timer
   processTimer();

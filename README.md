@@ -26,7 +26,7 @@ MrMatzo Mirror Controller is an ESP8266 timer app that switches a mirror's 12 V 
 
 The local web app at [mirror.local](http://mirror.local) displays current, voltage, power and remaining time. It also lets you set the timer duration and control the supply manually.
 
-**Firmware 1.3 is included**, unchanged from the original. The behavior described here has been checked against the source; compilation and hardware testing have not been performed as part of this documentation work. The original firmware's web interface and status messages are in Swedish.
+**Firmware 1.4.0 adds automatic shutdown recovery and password-protected browser OTA.** It has been compiled for NodeMCU 1.0 (ESP-12E) and checked with automated control-logic and upload-handler tests. Physical verification on the mirror is still required. The web interface and status messages are in Swedish. See [installation and OTA](firmware/README.md).
 
 ## How the timer works
 
@@ -34,7 +34,8 @@ The local web app at [mirror.local](http://mirror.local) displays current, volta
 2. At least 31 mA for 700 ms confirms that the light is on and starts the timer when automatic mode is enabled and rearming is allowed.
 3. The timer defaults to **10 minutes** and can be set to **1–1440 minutes**. The duration is saved in LittleFS.
 4. When time runs out, 12 V is disconnected for **3 seconds**. Power is restored, followed by a **5-second** detection lockout.
-5. After an automatic power cycle, a reading of at most 26 mA for 1000 ms must confirm that the light is off before another timer is allowed.
+5. A reading of at most 26 mA for 1000 ms confirms that the light is off. If it comes back on, the controller retries with **10-second**, then **30-second** interruptions.
+6. If all three attempts fail, the controller **leaves 12 V off** and displays a fault. The fault persists across restart when LittleFS is available. Use the manual power-on button to acknowledge it. An unknown state after restoration also triggers bounded recovery.
 
 Turning off the light before the timer expires stops the countdown. Between 26 and 31 mA, an already known light state is retained.
 
@@ -44,8 +45,12 @@ flowchart LR
     B --> C[Cut 12 V for 3 s]
     C --> D[Restore 12 V]
     D --> E[Wait 5 s]
-    E --> F[Wait for confirmed off]
-    F --> A
+    E --> F{Light confirmed off?}
+    F -->|Yes| A
+    F -->|No| G[Retry with 10 s, then 30 s off]
+    G --> H{Still not off?}
+    H -->|Yes| I[Keep 12 V off until acknowledged]
+    H -->|No| A
 ```
 
 [Firmware and operation →](firmware/README.md)
@@ -88,7 +93,7 @@ The plot shows steady current levels and brief peaks. The firmware uses hysteres
 
 Open the 3MF file in compatible CAD or slicing software to inspect the enclosure. The model uses millimeters and contains two model objects. Check print settings and fit before printing; see the [enclosure documentation](hardware/enclosure/README.md).
 
-The Arduino sketch and dependency overview are in [firmware](firmware/README.md). The exact board profile, library versions and a fully verified wiring diagram still need to be documented.
+The Arduino sketch, verified build configuration and OTA instructions are in [firmware](firmware/README.md). Firmware 1.3 needs one USB installation before wireless updates are available. A fully verified physical wiring diagram remains to be documented.
 
 ## License
 

@@ -4,6 +4,10 @@
 !.env.example
 secrets.h
 secrets.yaml
+DeviceConfig.h
+*.bin
+*.elf
+*.map
 
 # Build output
 .pio/
